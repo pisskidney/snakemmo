@@ -141,7 +141,7 @@ async def main():
     loop = asyncio.get_running_loop()
     stop = loop.create_future()
     loop.add_signal_handler(signal.SIGTERM, stop.set_result, None)
-    port = os.environ.get('PORT', 8001)
+    port = int(os.environ.get('PORT', 8001))
 
     async with websockets.serve(handler, "", port):
         await stop
