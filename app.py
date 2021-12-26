@@ -108,7 +108,7 @@ async def move(connected, websocket, game, player, message):
             'type': 'win',
             'player': game.last_player,
         }
-        await websocket.send(json.dumps(event))
+        await websockets.broadcast(connected, json.dumps(event))
 
 
 async def handler(websocket, path):
