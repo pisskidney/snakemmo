@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
+import os
 import json
+import signal
 import secrets
 import asyncio
 import structlog
@@ -136,8 +138,13 @@ async def handler(websocket, path):
 
 
 async def main():
-    async with websockets.serve(handler, "", 8001):
-        await asyncio.Future()  # run forever
+    loop = asyncio.get_running_loop()
+    stop = loop.create_future()
+    loop.add_signal_handler(signal.SIGTERM, stop.set_result, None)
+    port = os.environ.get('PORT', 8001)
+
+    async with websockets.serve(handler, "", port):
+        await stop
 
 
 if __name__ == "__main__":
