@@ -38,6 +38,7 @@ body {
   background-color: darkgray;
   color: white;
   font-weight: 700;
+  cursor: pointer;
 }
 
 .action[href=""] {

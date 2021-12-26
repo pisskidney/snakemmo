@@ -3,7 +3,14 @@ import { createBoard, playMove } from "./connect4.js";
 function initGame(websocket) {
   websocket.addEventListener('open', () => {
     const event = {type: 'init'};
-    websocket.send(event);
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('join')) {
+      // Second player joins game
+      event.join = params.get('join');
+    } else {
+      // First player creates game
+    }
+    websocket.send(JSON.stringify(event));
   });
 }
 
@@ -30,7 +37,11 @@ function showMessage(message) {
 function receiveMoves(board, websocket) {
   websocket.addEventListener("message", ({ data }) => {
     const event = JSON.parse(data);
+    console.log('received: ' + data);
     switch (event.type) {
+      case "init":
+        document.querySelector('.join').href = '?join=' + event.join;
+        break;
       case "play":
         // Update the UI with the move.
         playMove(board, event.player, event.column, event.row);
