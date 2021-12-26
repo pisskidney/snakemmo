@@ -98,7 +98,7 @@ async def move(connected, websocket, game, player, message):
         'column': event['column'],
         'row': game.top[event['column']] - 1,
     }
-    websockets.broadcast(connected, event)
+    websockets.broadcast(connected, json.dumps(event))
     logger.debug(f'broadcast {event}')
 
     if game.last_player_won:
