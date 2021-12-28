@@ -24,6 +24,8 @@ class Coordinates {
 let board = document.getElementById('board');
 let cells = new Map();
 let apples = new Map();
+let currentDirection = Direction.RIGHT;
+let flushedDirection = Direction.RIGHT;
 function initBoard() {
     for (let i = 0; i < ROWS; i++) {
         for (let j = 0; j < COLS; j++) {
@@ -77,15 +79,19 @@ function move(coords, direction, snakeID) {
     switch (direction) {
         case Direction.UP:
             coords.push([x - 1, y]);
+            flushedDirection = Direction.UP;
             break;
         case Direction.DOWN:
             coords.push([x + 1, y]);
+            flushedDirection = Direction.DOWN;
             break;
         case Direction.LEFT:
             coords.push([x, y - 1]);
+            flushedDirection = Direction.LEFT;
             break;
         case Direction.RIGHT:
             coords.push([x, y + 1]);
+            flushedDirection = Direction.RIGHT;
             break;
     }
     const [newX, newY] = coords[coords.length - 1];
@@ -93,26 +99,25 @@ function move(coords, direction, snakeID) {
     assignCell(coordsNewHead, snakeID);
     return coordsNewHead;
 }
-let currentDirection = Direction.RIGHT;
 window.addEventListener('keydown', (e) => {
     switch (e.key) {
         case 'ArrowUp':
-            if (currentDirection != Direction.DOWN) {
+            if (flushedDirection !== Direction.DOWN) {
                 currentDirection = Direction.UP;
             }
             break;
         case 'ArrowDown':
-            if (currentDirection != Direction.UP) {
+            if (flushedDirection !== Direction.UP) {
                 currentDirection = Direction.DOWN;
             }
             break;
         case 'ArrowLeft':
-            if (currentDirection != Direction.RIGHT) {
+            if (flushedDirection !== Direction.RIGHT) {
                 currentDirection = Direction.LEFT;
             }
             break;
         case 'ArrowRight':
-            if (currentDirection != Direction.LEFT) {
+            if (flushedDirection !== Direction.LEFT) {
                 currentDirection = Direction.RIGHT;
             }
             break;
