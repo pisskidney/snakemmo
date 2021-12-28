@@ -52,21 +52,40 @@ function drawApple(coords) {
 function drawSnakes(snakes) {
     for (const [snakeID, coords] of snakes) {
         for (let i = 0; i < coords.length; i++) {
-            console.log(snakeID, coords);
             const cellCoords = new Coordinates(coords[i][0], coords[i][1]);
             cells.get(cellCoords.hash).style.backgroundColor = COLOR_SNAKES[snakeID];
         }
     }
     ;
 }
-function move(coords, direction) {
-    let coord = new Coordinates( * coords.shift());
-    cells.get(coord.hash);
+function clearCell(coords) {
+    let cell = cells.get(coords.hash);
+    cell.style.backgroundColor = '#fff';
+}
+function assignCell(coords, snakeID) {
+    let cell = cells.get(coords.hash);
+    cell.style.backgroundColor = COLOR_SNAKES[snakeID];
+}
+function move(coords, direction, snakeID) {
+    let coordsTail = new Coordinates(...coords.shift());
+    clearCell(coordsTail);
+    cells.delete(coordsTail.hash);
     let [x, y] = coords[coords.length - 1];
     switch (direction) {
-        case Direction.RIGHT:
+        case Direction.UP:
+            coords.push([x - 1, y]);
+        case Direction.DOWN:
             coords.push([x + 1, y]);
+        case Direction.LEFT:
+            coords.push([x, y - 1]);
+        case Direction.RIGHT:
+            coords.push([x, y + 1]);
     }
+    const [newX, newY] = coords[coords.length - 1];
+    const coordsHead = new Coordinates(newX, newY);
+    assignCell(coordsHead, snakeID);
+    console.log(coordsHead);
+    return coordsHead;
 }
 const snakes = new Map([
     [0, [[13, 10], [14, 10], [14, 11], [14, 12]]],
@@ -76,6 +95,6 @@ initBoard();
 drawSnakes(snakes);
 drawApple(new Coordinates(50, 50));
 setInterval(() => {
-    move(snakes.get(1), Direction.RIGHT);
+    move(snakes.get(1), Direction.RIGHT, 1);
 }, 100);
 //# sourceMappingURL=main.js.map

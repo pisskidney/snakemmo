@@ -8,7 +8,7 @@ const DEBUG_GAME_SPEED = 100;
 const COLOR_APPLE = '#EF476F';
 const COLOR_SNAKES = ['#FFD166', '#06D6A0', '#118AB2', '#073B4C'];
 
-type Snake = Array<Array<number>>;
+type Snake = Array<[number, number]>;
 
 enum Direction {
     UP,
@@ -65,24 +65,44 @@ function drawApple(coords: Coordinates) {
 function drawSnakes(snakes: Map<number, Array<Array<number>>>) {
     for(const [snakeID, coords] of snakes) {
         for (let i = 0; i < coords.length; i++) {
-            console.log(snakeID, coords);
             const cellCoords = new Coordinates(coords[i][0], coords[i][1]);
             cells.get(cellCoords.hash).style.backgroundColor = COLOR_SNAKES[snakeID];
         }
     };
 }
 
-function move(coords: Snake, direction: Direction) {
-    // Drop tail
-    let coord = new Coordinates(*coords.shift());
+function clearCell(coords: Coordinates) {
+    let cell = cells.get(coords.hash);
+    cell.style.backgroundColor = '#fff';
+}
 
-    cells.get(coord.hash)
+function assignCell(coords: Coordinates, snakeID: number) {
+    let cell = cells.get(coords.hash);
+    cell.style.backgroundColor = COLOR_SNAKES[snakeID];
+}
+
+function move(coords: Snake, direction: Direction, snakeID: number): Coordinates {
+    // Drop tail
+    let coordsTail = new Coordinates(...coords.shift());
+    clearCell(coordsTail);
+    cells.delete(coordsTail.hash);
 
     let [x, y] = coords[coords.length-1];
     switch (direction) {
-        case Direction.RIGHT:
+        case Direction.UP:
+            coords.push([x-1, y]);
+        case Direction.DOWN:
             coords.push([x+1, y]);
+        case Direction.LEFT:
+            coords.push([x, y-1]);
+        case Direction.RIGHT:
+            coords.push([x, y+1]);
     }
+    const [newX, newY] = coords[coords.length-1];
+    const coordsHead = new Coordinates(newX, newY);
+    assignCell(coordsHead, snakeID);
+    console.log(coordsHead);
+    return coordsHead;
 }
 
 const snakes: Map<number, Snake> = new Map([
@@ -95,5 +115,5 @@ drawSnakes(snakes);
 drawApple(new Coordinates(50, 50));
 
 setInterval(() => {
-    move(snakes.get(1), Direction.RIGHT);
+    move(snakes.get(1), Direction.RIGHT, 1);
 }, 100);
