@@ -1,5 +1,5 @@
 const ROWS = 75;
-const COLS = 125;
+const COLS = 100;
 const CELL_WIDTH = 10;
 const CELL_HEIGHT = 10;
 const DEBUG_GAME_SPEED = 100;
@@ -61,6 +61,9 @@ function initSnakes(snakes) {
 }
 function clearCell(coords) {
     let cell = cells.get(coords.hash);
+    if (cell === undefined) {
+        console.log(coords, coords.hash);
+    }
     cell.style.backgroundColor = '#fff';
 }
 function assignCell(coords, snakeID) {
@@ -70,34 +73,59 @@ function assignCell(coords, snakeID) {
 function move(coords, direction, snakeID) {
     let coordsTail = new Coordinates(...coords.shift());
     clearCell(coordsTail);
-    cells.delete(coordsTail.hash);
     let [x, y] = coords[coords.length - 1];
     switch (direction) {
         case Direction.UP:
             coords.push([x - 1, y]);
+            break;
         case Direction.DOWN:
             coords.push([x + 1, y]);
+            break;
         case Direction.LEFT:
             coords.push([x, y - 1]);
+            break;
         case Direction.RIGHT:
             coords.push([x, y + 1]);
+            break;
     }
     const [newX, newY] = coords[coords.length - 1];
-    const coordsHead = new Coordinates(newX, newY);
-    assignCell(coordsHead, snakeID);
-    return coordsHead;
+    const coordsNewHead = new Coordinates(newX, newY);
+    assignCell(coordsNewHead, snakeID);
+    return coordsNewHead;
 }
+let currentDirection = Direction.RIGHT;
+window.addEventListener('keydown', (e) => {
+    switch (e.key) {
+        case 'ArrowUp':
+            if (currentDirection != Direction.DOWN) {
+                currentDirection = Direction.UP;
+            }
+            break;
+        case 'ArrowDown':
+            if (currentDirection != Direction.UP) {
+                currentDirection = Direction.DOWN;
+            }
+            break;
+        case 'ArrowLeft':
+            if (currentDirection != Direction.RIGHT) {
+                currentDirection = Direction.LEFT;
+            }
+            break;
+        case 'ArrowRight':
+            if (currentDirection != Direction.LEFT) {
+                currentDirection = Direction.RIGHT;
+            }
+            break;
+    }
+});
 const snakes = new Map([
     [0, [[13, 10], [14, 10], [14, 11], [14, 12]]],
-    [1, [[9, 1], [10, 1], [11, 1], [12, 1]]],
+    [1, [[9, 1], [10, 1], [11, 1], [12, 1], [12, 2], [12, 3], [12, 4]]],
 ]);
 initBoard();
 initSnakes(snakes);
 drawApple(new Coordinates(50, 50));
 let test = setInterval(() => {
-    move(snakes.get(1), Direction.RIGHT, 1);
+    move(snakes.get(1), currentDirection, 1);
 }, 100);
-setTimeout(() => {
-    clearInterval(test);
-}, 5000);
 //# sourceMappingURL=main.js.map
