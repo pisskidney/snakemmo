@@ -45,6 +45,7 @@ function initBoard() {
             cell.style.top = i * CELL_HEIGHT + 'px';
             cell.style.width = CELL_WIDTH + 'px';
             cell.style.height = CELL_HEIGHT + 'px';
+            cell.style.backgroundColor = '#fff';
             board.appendChild(cell);
             let coords = new Coordinates(i, j)
             cells.set(coords.hash, cell);
@@ -62,7 +63,7 @@ function drawApple(coords: Coordinates) {
     }
 }
 
-function drawSnakes(snakes: Map<number, Array<Array<number>>>) {
+function initSnakes(snakes: Map<number, Array<Array<number>>>) {
     for(const [snakeID, coords] of snakes) {
         for (let i = 0; i < coords.length; i++) {
             const cellCoords = new Coordinates(coords[i][0], coords[i][1]);
@@ -101,7 +102,6 @@ function move(coords: Snake, direction: Direction, snakeID: number): Coordinates
     const [newX, newY] = coords[coords.length-1];
     const coordsHead = new Coordinates(newX, newY);
     assignCell(coordsHead, snakeID);
-    console.log(coordsHead);
     return coordsHead;
 }
 
@@ -111,9 +111,13 @@ const snakes: Map<number, Snake> = new Map([
 ]);
 
 initBoard();
-drawSnakes(snakes);
+initSnakes(snakes);
 drawApple(new Coordinates(50, 50));
 
-setInterval(() => {
+let test = setInterval(() => {
     move(snakes.get(1), Direction.RIGHT, 1);
 }, 100);
+
+setTimeout(() => {
+    clearInterval(test);
+}, 5000);
