@@ -26,6 +26,7 @@ let cells = new Map();
 let apples = new Map();
 let currentDirection = Direction.RIGHT;
 let flushedDirection = Direction.RIGHT;
+let directionQueue = [];
 function initBoard() {
     for (let i = 0; i < ROWS; i++) {
         for (let j = 0; j < COLS; j++) {
@@ -63,20 +64,41 @@ function initSnakes(snakes) {
 }
 function clearCell(coords) {
     let cell = cells.get(coords.hash);
-    if (cell === undefined) {
-        console.log(coords, coords.hash);
-    }
     cell.style.backgroundColor = '#fff';
 }
 function assignCell(coords, snakeID) {
     let cell = cells.get(coords.hash);
     cell.style.backgroundColor = COLOR_SNAKES[snakeID];
 }
-function move(coords, direction, snakeID) {
+function compatibleDirections(dir1, dir2) {
+    if (dir1 == Direction.UP && dir2 == Direction.DOWN) {
+        return false;
+    }
+    if (dir1 == Direction.DOWN && dir2 == Direction.UP) {
+        return false;
+    }
+    if (dir1 == Direction.LEFT && dir2 == Direction.RIGHT) {
+        return false;
+    }
+    if (dir1 == Direction.RIGHT && dir2 == Direction.LEFT) {
+        return false;
+    }
+    return true;
+}
+function move(coords, snakeID) {
+    document.getElementById('debug').innerText = JSON.stringify(directionQueue);
+    let nextDirection;
+    while (directionQueue.length > 0) {
+        nextDirection = directionQueue.shift();
+        if (compatibleDirections(nextDirection, flushedDirection)) {
+            currentDirection = nextDirection;
+            break;
+        }
+    }
     let coordsTail = new Coordinates(...coords.shift());
     clearCell(coordsTail);
     let [x, y] = coords[coords.length - 1];
-    switch (direction) {
+    switch (currentDirection) {
         case Direction.UP:
             coords.push([x - 1, y]);
             flushedDirection = Direction.UP;
@@ -102,24 +124,24 @@ function move(coords, direction, snakeID) {
 window.addEventListener('keydown', (e) => {
     switch (e.key) {
         case 'ArrowUp':
-            if (flushedDirection !== Direction.DOWN) {
-                currentDirection = Direction.UP;
-            }
+        case 'w':
+        case 'W':
+            directionQueue.push(Direction.UP);
             break;
         case 'ArrowDown':
-            if (flushedDirection !== Direction.UP) {
-                currentDirection = Direction.DOWN;
-            }
+        case 's':
+        case 'S':
+            directionQueue.push(Direction.DOWN);
             break;
         case 'ArrowLeft':
-            if (flushedDirection !== Direction.RIGHT) {
-                currentDirection = Direction.LEFT;
-            }
+        case 'a':
+        case 'A':
+            directionQueue.push(Direction.LEFT);
             break;
         case 'ArrowRight':
-            if (flushedDirection !== Direction.LEFT) {
-                currentDirection = Direction.RIGHT;
-            }
+        case 'd':
+        case 'D':
+            directionQueue.push(Direction.RIGHT);
             break;
     }
 });
@@ -131,6 +153,6 @@ initBoard();
 initSnakes(snakes);
 drawApple(new Coordinates(50, 50));
 let test = setInterval(() => {
-    move(snakes.get(1), currentDirection, 1);
-}, 100);
+    move(snakes.get(1), 1);
+}, DEBUG_GAME_SPEED);
 //# sourceMappingURL=main.js.map
