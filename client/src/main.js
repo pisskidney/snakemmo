@@ -86,7 +86,6 @@ function compatibleDirections(dir1, dir2) {
     return true;
 }
 function move(coords, snakeID) {
-    document.getElementById('debug').innerText = JSON.stringify(directionQueue);
     let nextDirection;
     while (directionQueue.length > 0) {
         nextDirection = directionQueue.shift();
@@ -101,21 +100,18 @@ function move(coords, snakeID) {
     switch (currentDirection) {
         case Direction.UP:
             coords.push([x - 1, y]);
-            flushedDirection = Direction.UP;
             break;
         case Direction.DOWN:
             coords.push([x + 1, y]);
-            flushedDirection = Direction.DOWN;
             break;
         case Direction.LEFT:
             coords.push([x, y - 1]);
-            flushedDirection = Direction.LEFT;
             break;
         case Direction.RIGHT:
             coords.push([x, y + 1]);
-            flushedDirection = Direction.RIGHT;
             break;
     }
+    flushedDirection = currentDirection;
     const [newX, newY] = coords[coords.length - 1];
     const coordsNewHead = new Coordinates(newX, newY);
     assignCell(coordsNewHead, snakeID);
