@@ -6,16 +6,18 @@ import structlog
 import websockets
 from typing import Any, Optional
 
-from .snake import Snake
+from snake import SnakeGame, Direction
 
 
 logger = structlog.get_logger()
+
+FPS = 30
 
 SESSIONS = {
     'test': {
         'players': set([]),
         'observers': set([]),
-        'game': Snake(75, 100),
+        'game': SnakeGame(75, 100),
     },
 }
 
@@ -23,13 +25,29 @@ SESSIONS = {
 async def join(websocket: Any, session_id: str, user_id: int):
     logger.info(f'Player {user_id=} joined {session_id=}')
 
-    SESSIONS[session_id]['players'].add(websocket)
+    session = SESSIONS[session_id]
+    players = session['players']
+    game = session['game']
+
+    players.add(websocket)
+    game.register_snake(user_id)
 
     try:
         async for message in websocket:
-            ...
+            event = json.loads(message)
+            user_id = event['user_id']
+            direction = {
+                'up': Direction.UP,
+                'down': Direction.DOWN,
+                'left': Direction.LEFT,
+                'right': Direction.RIGHT,
+            }[event['direction']]
+            SESSIONS[session_id]['game'].inputs[user_id].append(direction)
     finally:
-        SESSIONS[session_id]['players'].remove(websockets)
+        logger.warning(f'Dropped {user_id=}')
+        if user_id in game.snakes:
+            game.kill(user_id)
+        SESSIONS[session_id]['players'].remove(websocket)
 
 
 async def observe(websocket: Any, session_id: str, user_id: Optional[int]):
@@ -41,7 +59,7 @@ async def observe(websocket: Any, session_id: str, user_id: Optional[int]):
         async for message in websocket:
             ...
     finally:
-        SESSIONS[session_id]['observers'].remove(websockets)
+        SESSIONS[session_id]['observers'].remove(websocket)
 
 
 async def handler(websocket):
@@ -71,6 +89,18 @@ async def handler(websocket):
         ...
 
 
+def game_loop():
+    for session_id, session in SESSIONS.items():
+        game = session['game']
+        players = session['players']
+        game.tick()
+        event = {
+            'type': 'tick',
+        }
+        event.update(game.to_dict())
+        websockets.broadcast(players, json.dumps(event))
+
+
 async def main():
     loop = asyncio.get_running_loop()
     stop = loop.create_future()
@@ -80,7 +110,11 @@ async def main():
     logger.info('Server started...')
 
     async with websockets.serve(handler, '', port):
-        await stop
+        while not stop.done():
+            game_loop()
+            await asyncio.sleep(1)
+
+    logger.info('Server stopped.')
 
 
 if __name__ == '__main__':

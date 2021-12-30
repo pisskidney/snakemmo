@@ -173,7 +173,6 @@ const snakes: Map<number, Snake> = new Map([
 
 initBoard();
 initSnakes(snakes);
-drawApple(new Coordinates(50, 50));
 
 let test = setInterval(() => {
     move(snakes.get(1), 1);
