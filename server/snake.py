@@ -3,8 +3,8 @@ from __future__ import annotations
 import enum
 from abc import ABC
 from random import choice, randint
-from collections import deque, namedtuple
 from typing import List, Deque, Dict, Any, Tuple
+from collections import deque, namedtuple, defaultdict
 
 
 Cell = namedtuple('Point', ['x', 'y'])
@@ -100,10 +100,8 @@ class Snake(Collision):
         self.cells.append(next_head)
         return tail, next_head
 
-    def to_dict(self) -> Dict[int, List[List[int]]]:
-        return {
-            self.user_id: [[cell.x, cell.y] for cell in self.cells]
-        }
+    def serialize(self) -> List[List[int]]:
+        return [[cell.x, cell.y] for cell in self.cells]
 
 
 class SnakeGame:
@@ -118,7 +116,7 @@ class SnakeGame:
         self.cols = cols
         self.snakes: Dict[int, Snake] = {}
         self.apples: List[Cell] = []
-        self.inputs: Dict[int, Deque[Direction]] = {}
+        self.inputs: Dict[int, Deque[Direction]] = defaultdict(deque)
         self.board: List[List[Any]] = [[None for j in range(cols)] for i in range(rows)]
         self.dead_last_tick: List[int] = []
 
@@ -203,11 +201,16 @@ class SnakeGame:
             apple = Apple()
             self.board[cell.x][cell.y] = apple
             self.apples.append(cell)
+
+            # Remove any commands left in the queue
+            if user_id in self.inputs:
+                del self.inputs[user_id]
+
         del self.snakes[user_id]
 
-    def to_dict(self) -> Dict[str, Any]:
+    def serialize(self) -> Dict[str, Any]:
         return {
-            'snakes': [snake.to_dict() for _, snake in self.snakes.items()],
+            'snakes': {user_id: snake.serialize() for user_id, snake in self.snakes.items()},
             'apples': [[apple.x, apple.y] for apple in self.apples],
             'deaths': self.dead_last_tick,
         }

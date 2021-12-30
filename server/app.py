@@ -11,7 +11,7 @@ from snake import SnakeGame, Direction
 
 logger = structlog.get_logger()
 
-FPS = 30
+FPS = 10
 
 SESSIONS = {
     'test': {
@@ -34,14 +34,20 @@ async def join(websocket: Any, session_id: str, user_id: int):
 
     try:
         async for message in websocket:
+            logger.warning(f'Got {message=}')
             event = json.loads(message)
             user_id = event['user_id']
+
             direction = {
                 'up': Direction.UP,
                 'down': Direction.DOWN,
                 'left': Direction.LEFT,
                 'right': Direction.RIGHT,
-            }[event['direction']]
+            }.get(event['direction'])
+
+            if direction is None:
+                continue
+
             SESSIONS[session_id]['game'].inputs[user_id].append(direction)
     finally:
         logger.warning(f'Dropped {user_id=}')
@@ -97,7 +103,7 @@ def game_loop():
         event = {
             'type': 'tick',
         }
-        event.update(game.to_dict())
+        event.update(game.serialize())
         websockets.broadcast(players, json.dumps(event))
 
 
@@ -112,7 +118,7 @@ async def main():
     async with websockets.serve(handler, '', port):
         while not stop.done():
             game_loop()
-            await asyncio.sleep(1)
+            await asyncio.sleep(1 / FPS)
 
     logger.info('Server stopped.')
 

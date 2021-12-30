@@ -2,9 +2,13 @@ const ROWS = 75;
 const COLS = 100;
 const CELL_WIDTH = 10;
 const CELL_HEIGHT = 10;
-const DEBUG_GAME_SPEED = 100;
 const COLOR_APPLE = '#EF476F';
 const COLOR_SNAKES = ['#FFD166', '#06D6A0', '#118AB2', '#073B4C'];
+;
+let state = {
+    userID: undefined,
+    sessionID: undefined
+};
 var Direction;
 (function (Direction) {
     Direction[Direction["UP"] = 0] = "UP";
@@ -23,131 +27,164 @@ class Coordinates {
 }
 let board = document.getElementById('board');
 let cells = new Map();
-let apples = new Map();
-let currentDirection = Direction.RIGHT;
-let flushedDirection = Direction.RIGHT;
-let directionQueue = [];
+let apples = new Array();
+let snakes = new Map();
 function initBoard() {
     for (let i = 0; i < ROWS; i++) {
         for (let j = 0; j < COLS; j++) {
             let cell = document.createElement('div');
             cell.style.position = 'absolute';
-            cell.style.border = '1px solid #eee';
             cell.style.left = j * CELL_WIDTH + 'px';
             cell.style.top = i * CELL_HEIGHT + 'px';
             cell.style.width = CELL_WIDTH + 'px';
             cell.style.height = CELL_HEIGHT + 'px';
-            cell.style.backgroundColor = '#fff';
             board.appendChild(cell);
             let coords = new Coordinates(i, j);
             cells.set(coords.hash, cell);
+            drawDefaultCell(coords);
         }
     }
 }
-function drawApple(coords) {
-    let cell = cells.get(coords.hash);
-    if (cell !== undefined) {
+function drawApples(apples) {
+    for (let coords of apples) {
+        const cellCoords = new Coordinates(coords[0], coords[1]);
+        let cell = cells.get(cellCoords.hash);
         cell.style.backgroundColor = COLOR_APPLE;
         cell.style.border = 'none';
         cell.style.borderRadius = '50%';
-        apples.set(coords.hash, cell);
     }
 }
-function initSnakes(snakes) {
+function drawSnakes(snakes) {
     for (const [snakeID, coords] of snakes) {
         for (let i = 0; i < coords.length; i++) {
             const cellCoords = new Coordinates(coords[i][0], coords[i][1]);
-            cells.get(cellCoords.hash).style.backgroundColor = COLOR_SNAKES[snakeID];
+            assignCell(cellCoords, snakeID);
         }
     }
     ;
-}
-function clearCell(coords) {
-    let cell = cells.get(coords.hash);
-    cell.style.backgroundColor = '#fff';
 }
 function assignCell(coords, snakeID) {
     let cell = cells.get(coords.hash);
     cell.style.backgroundColor = COLOR_SNAKES[snakeID];
 }
-function compatibleDirections(dir1, dir2) {
-    if (dir1 == Direction.UP && dir2 == Direction.DOWN) {
-        return false;
-    }
-    if (dir1 == Direction.DOWN && dir2 == Direction.UP) {
-        return false;
-    }
-    if (dir1 == Direction.LEFT && dir2 == Direction.RIGHT) {
-        return false;
-    }
-    if (dir1 == Direction.RIGHT && dir2 == Direction.LEFT) {
-        return false;
-    }
-    return true;
-}
-function move(coords, snakeID) {
-    let nextDirection;
-    while (directionQueue.length > 0) {
-        nextDirection = directionQueue.shift();
-        if (compatibleDirections(nextDirection, flushedDirection)) {
-            currentDirection = nextDirection;
-            break;
+function clearAllSnakes(snakes) {
+    for (const [snakeID, coords] of snakes) {
+        for (let i = 0; i < coords.length; i++) {
+            const cellCoords = new Coordinates(coords[i][0], coords[i][1]);
+            drawDefaultCell(cellCoords);
         }
     }
-    let coordsTail = new Coordinates(...coords.shift());
-    clearCell(coordsTail);
-    let [x, y] = coords[coords.length - 1];
-    switch (currentDirection) {
-        case Direction.UP:
-            coords.push([x - 1, y]);
-            break;
-        case Direction.DOWN:
-            coords.push([x + 1, y]);
-            break;
-        case Direction.LEFT:
-            coords.push([x, y - 1]);
-            break;
-        case Direction.RIGHT:
-            coords.push([x, y + 1]);
-            break;
-    }
-    flushedDirection = currentDirection;
-    const [newX, newY] = coords[coords.length - 1];
-    const coordsNewHead = new Coordinates(newX, newY);
-    assignCell(coordsNewHead, snakeID);
-    return coordsNewHead;
+    ;
 }
-window.addEventListener('keydown', (e) => {
-    switch (e.key) {
-        case 'ArrowUp':
-        case 'w':
-        case 'W':
-            directionQueue.push(Direction.UP);
-            break;
-        case 'ArrowDown':
-        case 's':
-        case 'S':
-            directionQueue.push(Direction.DOWN);
-            break;
-        case 'ArrowLeft':
-        case 'a':
-        case 'A':
-            directionQueue.push(Direction.LEFT);
-            break;
-        case 'ArrowRight':
-        case 'd':
-        case 'D':
-            directionQueue.push(Direction.RIGHT);
-            break;
+function drawDefaultCell(coords) {
+    let cell = cells.get(coords.hash);
+    cell.style.backgroundColor = '#fff';
+    cell.style.border = '1px solid #eee';
+    cell.style.borderRadius = '0px';
+}
+function getWebsocketServer() {
+    if (window.location.host == 'pisskidney.github.io') {
+        return 'wss://snakemmo.herokuapp.com/';
     }
+    else if (window.location.host == 'localhost:8000') {
+        return 'ws://localhost:8001/';
+    }
+    else {
+        throw new Error(`Unsupported host: ${window.location.host}`);
+    }
+}
+function sendMoves(websocket) {
+    window.addEventListener('keydown', (e) => {
+        let event = {
+            type: 'play',
+            user_id: state.userID,
+            direction: ''
+        };
+        switch (e.key) {
+            case 'ArrowUp':
+            case 'w':
+            case 'W':
+                event.direction = 'up';
+                break;
+            case 'ArrowDown':
+            case 's':
+            case 'S':
+                event.direction = 'down';
+                break;
+            case 'ArrowLeft':
+            case 'a':
+            case 'A':
+                event.direction = 'left';
+                break;
+            case 'ArrowRight':
+            case 'd':
+            case 'D':
+                event.direction = 'right';
+                break;
+        }
+        websocket.send(JSON.stringify(event));
+    });
+}
+function receiveMoves(websocket) {
+    websocket.addEventListener('message', ({ data }) => {
+        const event = JSON.parse(data);
+        switch (event.type) {
+            case 'tick':
+                clearAllSnakes(snakes);
+                snakes.clear();
+                for (let user_id in event.snakes) {
+                    snakes.set(parseInt(user_id), event.snakes[user_id]);
+                }
+                drawSnakes(snakes);
+                apples.length = 0;
+                for (let coords of event.apples) {
+                    apples.push(coords);
+                }
+                drawApples(apples);
+                break;
+            case 'win':
+                showMessage(`Player ${event.player} wins!`);
+                websocket.close(1000);
+                break;
+            case 'error':
+                showMessage(event.message);
+                break;
+            default:
+                throw new Error(`Unsupported event type: ${event.type}.`);
+        }
+    });
+}
+function initGame() {
+    const websocket = new WebSocket(getWebsocketServer());
+    websocket.addEventListener('open', () => {
+        const event = {
+            type: 'join',
+            user_id: parseInt(document.getElementById('user-id').value),
+            session_id: document.getElementById('session-id').value
+        };
+        const params = new URLSearchParams(window.location.search);
+        websocket.send(JSON.stringify(event));
+    });
+    receiveMoves(websocket);
+    sendMoves(websocket);
+}
+window.addEventListener('DOMContentLoaded', () => {
+    initBoard();
+    document.getElementById('join').addEventListener('click', () => {
+        let userIDElement = document.getElementById('user-id');
+        let sessionIDElement = document.getElementById('session-id');
+        if (!userIDElement.value) {
+            userIDElement.style.borderColor = 'red';
+        }
+        else if (!sessionIDElement.value) {
+            sessionIDElement.style.borderColor = 'red';
+        }
+        else {
+            state.userID = parseInt(userIDElement.value);
+            state.sessionID = sessionIDElement.value;
+            document.getElementById('panel').style.display = 'none';
+            initGame();
+        }
+    });
 });
-const snakes = new Map([
-    [0, [[13, 10], [14, 10], [14, 11], [14, 12]]],
-    [1, [[9, 1], [10, 1], [11, 1], [12, 1], [12, 2], [12, 3], [12, 4]]],
-]);
-initBoard();
-initSnakes(snakes);
-let test = setInterval(() => {
-    move(snakes.get(1), 1);
-}, DEBUG_GAME_SPEED);
 //# sourceMappingURL=main.js.map
