@@ -105,7 +105,7 @@ class Snake(Collision):
 
 
 class SnakeGame:
-    SNAKE_LENGTH_INITIAL = 4
+    SNAKE_LENGTH_INITIAL = 10
 
     def __init__(self, rows: int, cols: int):
         """
