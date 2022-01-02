@@ -17,7 +17,7 @@ SESSIONS = {
     'test': {
         'players': set([]),
         'observers': set([]),
-        'game': SnakeGame(75, 100),
+        'game': SnakeGame(75, 150),
     },
 }
 

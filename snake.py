@@ -143,7 +143,6 @@ class SnakeGame:
         snake_cells = deque([])
         direction = choice(list(Direction))
         while len(snake_cells) != self.SNAKE_LENGTH_INITIAL:
-            print('r')
             snake_cells.clear()
             cell = Cell(
                 randint(self.SNAKE_LENGTH_INITIAL * 2, self.rows - (self.SNAKE_LENGTH_INITIAL * 2)),
@@ -166,7 +165,6 @@ class SnakeGame:
         Move all snakes.
         Check for integrity violations (dead snakes).
         """
-        print('.',)
         # Spawn apples
         while len(self.apples) < len(self.snakes) * self.MAX_APPLES_PER_PLAYER:
             apple_candidate = Cell(randint(0, self.rows-1), randint(0, self.cols-1))
