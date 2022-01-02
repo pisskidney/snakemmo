@@ -15,11 +15,52 @@ FPS = 10
 
 SESSIONS = {
     'test': {
+        'name': 'Test',
         'players': set([]),
         'observers': set([]),
         'game': SnakeGame(75, 150),
+        'ranked': False,
+        'icon': 'https://i.imgur.com/9dB9PWd.png',
+    },
+    'forest1': {
+        'name': 'Pine Forest',
+        'players': set([]),
+        'observers': set([]),
+        'game': SnakeGame(75, 150),
+        'ranked': True,
+        'icon': 'https://i.imgur.com/tLyBQWN.png',
+    },
+    'desert1': {
+        'name': 'Arabian Desert',
+        'players': set([]),
+        'observers': set([]),
+        'game': SnakeGame(75, 150),
+        'ranked': True,
+        'icon': 'https://i.imgur.com/E2kJmpO.png',
+    },
+    'tropical1': {
+        'name': 'Tropical Island',
+        'players': set([]),
+        'observers': set([]),
+        'game': SnakeGame(75, 150),
+        'ranked': True,
+        'icon': 'https://i.imgur.com/52OxYNa.png',
     },
 }
+
+
+async def session_list(websocket: Any):
+    event = {
+        'type': 'session_list',
+        'sessions': {
+            session_name: {
+                'players': len(session_data['players']),
+                'observers': len(session_data['players']),
+            }
+            for session_name, session_data in SESSIONS.items()
+        }
+    }
+    websocket.send(json.dumps(event))
 
 
 async def join(websocket: Any, session_id: str, user_id: int):
@@ -91,10 +132,12 @@ async def handler(websocket):
     event = json.loads(first_message)
 
     event_type = event['type']
-    session_id = event['session_id']
+    session_id = event.get('session_id')
     user_id = event.get('user_id')
 
-    if event_type == 'join':
+    if event_type == 'list':
+        await session_list(websocket)
+    elif event_type == 'join':
         await join(websocket, session_id, user_id)
     elif event_type == 'observe':
         await observe(websocket, session_id, user_id)
