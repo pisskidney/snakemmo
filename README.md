@@ -6,4 +6,5 @@ TODO
 
 IDEAS
 
+* 2+ players controlling the same snake
 * Item that lets snake expand like tail is always an apple

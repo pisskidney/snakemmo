@@ -107,6 +107,10 @@ class Snake(Collision):
         tail = None
         if not self.is_tail_apple():
             tail = self.cells.popleft()
+        else:
+            # Digestion
+            self.eaten_apples.popleft()
+
         return tail, next_head
 
     def serialize(self) -> List[List[int]]:
@@ -139,9 +143,11 @@ class SnakeGame:
         snake_cells = deque([])
         direction = choice(list(Direction))
         while len(snake_cells) != self.SNAKE_LENGTH_INITIAL:
+            print('r')
+            snake_cells.clear()
             cell = Cell(
-                randint(self.SNAKE_LENGTH_INITIAL, self.rows - self.SNAKE_LENGTH_INITIAL),
-                randint(self.SNAKE_LENGTH_INITIAL, self.cols - self.SNAKE_LENGTH_INITIAL)
+                randint(self.SNAKE_LENGTH_INITIAL * 2, self.rows - (self.SNAKE_LENGTH_INITIAL * 2)),
+                randint(self.SNAKE_LENGTH_INITIAL * 2, self.cols - (self.SNAKE_LENGTH_INITIAL * 2))
             )
             for _ in range(self.SNAKE_LENGTH_INITIAL):
                 if self.board[cell.x][cell.y] is not None:
@@ -160,11 +166,19 @@ class SnakeGame:
         Move all snakes.
         Check for integrity violations (dead snakes).
         """
+        print('.',)
+        # Spawn apples
+        while len(self.apples) < len(self.snakes) * self.MAX_APPLES_PER_PLAYER:
+            apple_candidate = Cell(randint(0, self.rows-1), randint(0, self.cols-1))
+            if self.board[apple_candidate.x][apple_candidate.y] is None:
+                self.create_apple(apple_candidate)
+
+        # Handle movement
         self.dead_last_tick = []
         dead = []
         for user_id, snake in self.snakes.items():
             # Find first valid input in the input queue (if it exists)
-            while self.inputs.get(user_id):
+            while self.inputs.get(user_id, None):
                 candidate_direction = self.inputs.get(user_id).popleft()
                 if self.is_valid_input(candidate_direction, snake.direction):
                     snake.direction = candidate_direction
@@ -216,17 +230,19 @@ class SnakeGame:
         # Iterate through snake body except head that collided
         self.dead_last_tick.append(user_id)
         for cell in list(self.snakes[user_id].cells)[:-1]:
-            apple = Apple()
-            self.board[cell.x][cell.y] = apple
-            self.apples.add(cell)
+            self.create_apple(cell)
 
             # Remove any commands left in the queue
             if user_id in self.inputs:
-                print('here', self.inputs)
                 del self.inputs[user_id]
-                print('after there', self.inputs)
 
         del self.snakes[user_id]
+
+    def create_apple(self, cell: Cell) -> Apple:
+        apple = Apple()
+        self.board[cell.x][cell.y] = apple
+        self.apples.add(cell)
+        return apple
 
     def serialize(self) -> Dict[str, Any]:
         return {
