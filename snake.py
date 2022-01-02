@@ -3,8 +3,8 @@ from __future__ import annotations
 import enum
 from abc import ABC
 from random import choice, randint
-from typing import List, Deque, Dict, Any, Tuple
 from collections import deque, namedtuple, defaultdict
+from typing import List, Deque, Dict, Any, Set, Tuple, Optional
 
 
 Cell = namedtuple('Point', ['x', 'y'])
@@ -74,6 +74,9 @@ class Snake(Collision):
     def is_tail_apple(self):
         return self.eaten_apples and self.eaten_apples[0] == self.tail
 
+    def is_head_apple(self, apples: Set[Cell]):
+        return self.head in apples
+
     @staticmethod
     def dist(snake1: Snake, snake2: Snake) -> int:
         """
@@ -94,15 +97,16 @@ class Snake(Collision):
             marshall_distance(snake1.tail, snake2.head),
         )
 
-    def move(self) -> Tuple[Cell, Cell]:
+    def move(self) -> Tuple[Optional[Cell], Cell]:
         """
         Move the snake cells according to the direction.
         Return the evacuated cells and the newly created ones.
         """
         next_head = move_cell(self.head, self.direction)
+        self.cells.append(next_head)
+        tail = None
         if not self.is_tail_apple():
             tail = self.cells.popleft()
-        self.cells.append(next_head)
         return tail, next_head
 
     def serialize(self) -> List[List[int]]:
@@ -121,7 +125,7 @@ class SnakeGame:
         self.rows = rows
         self.cols = cols
         self.snakes: Dict[int, Snake] = {}
-        self.apples: List[Cell] = []
+        self.apples: Set[Cell] = set([])
         self.inputs: Dict[int, Deque[Direction]] = defaultdict(deque)
         self.board: List[List[Any]] = [[None for j in range(cols)] for i in range(rows)]
         self.dead_last_tick: List[int] = []
@@ -174,6 +178,14 @@ class SnakeGame:
                 dead.append(user_id)
             else:
                 self.board[head.x][head.y] = snake
+
+            # If just eaten an apple
+            if snake.is_head_apple(self.apples):
+                snake.eaten_apples.append(snake.head)
+                self.apples.remove(snake.head)
+
+            # If tail is not an apple
+            if tail:
                 self.board[tail.x][tail.y] = None
 
         # Handle dead snakes
@@ -206,7 +218,7 @@ class SnakeGame:
         for cell in list(self.snakes[user_id].cells)[:-1]:
             apple = Apple()
             self.board[cell.x][cell.y] = apple
-            self.apples.append(cell)
+            self.apples.add(cell)
 
             # Remove any commands left in the queue
             if user_id in self.inputs:
