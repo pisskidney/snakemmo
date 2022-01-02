@@ -4,7 +4,7 @@ import signal
 import asyncio
 import structlog
 import websockets
-from typing import Any, Optional
+from typing import Any, Optional, Dict
 
 from snake import SnakeGame, Direction
 
@@ -49,18 +49,19 @@ SESSIONS = {
 }
 
 
-async def session_list(websocket: Any):
-    event = {
+def session_list() -> Dict[Any, Any]:
+    return {
         'type': 'session_list',
         'sessions': {
             session_name: {
+                'name': session_data['name'],
+                'icon': session_data['icon'],
                 'players': len(session_data['players']),
                 'observers': len(session_data['players']),
             }
             for session_name, session_data in SESSIONS.items()
         }
     }
-    websocket.send(json.dumps(event))
 
 
 async def join(websocket: Any, session_id: str, user_id: int):
@@ -127,6 +128,12 @@ async def handler(websocket):
         "user_id": 1336
     }
     """
+    session_list_message = await websocket.recv()
+    event = json.loads(session_list_message)
+    event_type = event['type']
+
+    assert event_type == 'session_list'
+    await websocket.send(json.dumps(session_list()))
 
     first_message = await websocket.recv()
     event = json.loads(first_message)
@@ -135,9 +142,7 @@ async def handler(websocket):
     session_id = event.get('session_id')
     user_id = event.get('user_id')
 
-    if event_type == 'list':
-        await session_list(websocket)
-    elif event_type == 'join':
+    if event_type == 'join':
         await join(websocket, session_id, user_id)
     elif event_type == 'observe':
         await observe(websocket, session_id, user_id)
