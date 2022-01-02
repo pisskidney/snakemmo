@@ -57,6 +57,7 @@ class Snake(Collision):
         self.user_id = user_id
         self.direction = initial_direction
         self.cells = cells
+        self.eaten_apples: Deque[Cell] = deque([])
 
     @property
     def head(self):
@@ -69,6 +70,9 @@ class Snake(Collision):
     @property
     def tail(self):
         return self.cells[0]
+
+    def is_tail_apple(self):
+        return self.eaten_apples and self.eaten_apples[0] == self.tail
 
     @staticmethod
     def dist(snake1: Snake, snake2: Snake) -> int:
@@ -96,7 +100,8 @@ class Snake(Collision):
         Return the evacuated cells and the newly created ones.
         """
         next_head = move_cell(self.head, self.direction)
-        tail = self.cells.popleft()
+        if not self.is_tail_apple():
+            tail = self.cells.popleft()
         self.cells.append(next_head)
         return tail, next_head
 
@@ -106,6 +111,7 @@ class Snake(Collision):
 
 class SnakeGame:
     SNAKE_LENGTH_INITIAL = 10
+    MAX_APPLES_PER_PLAYER = 15
 
     def __init__(self, rows: int, cols: int):
         """
@@ -204,7 +210,9 @@ class SnakeGame:
 
             # Remove any commands left in the queue
             if user_id in self.inputs:
+                print('here', self.inputs)
                 del self.inputs[user_id]
+                print('after there', self.inputs)
 
         del self.snakes[user_id]
 

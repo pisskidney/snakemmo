@@ -38,17 +38,24 @@ async def join(websocket: Any, session_id: str, user_id: int):
             event = json.loads(message)
             user_id = event['user_id']
 
-            direction = {
-                'up': Direction.UP,
-                'down': Direction.DOWN,
-                'left': Direction.LEFT,
-                'right': Direction.RIGHT,
-            }.get(event['direction'])
+            if event['type'] == 'play':
+                direction = {
+                    'up': Direction.UP,
+                    'down': Direction.DOWN,
+                    'left': Direction.LEFT,
+                    'right': Direction.RIGHT,
+                }.get(event['direction'])
 
-            if direction is None:
-                continue
+                # Disregard non movement keys
+                if not direction:
+                    continue
 
-            SESSIONS[session_id]['game'].inputs[user_id].append(direction)
+                # Only record if snake is alive
+                if user_id in game.snakes:
+                    SESSIONS[session_id]['game'].inputs[user_id].append(direction)
+
+            elif event['type'] == 'join':
+                game.register_snake(user_id)
     finally:
         logger.warning(f'Dropped {user_id=}')
         if user_id in game.snakes:
