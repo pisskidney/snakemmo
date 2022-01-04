@@ -1,6 +1,7 @@
 import os
 import json
 import signal
+import uvloop
 import asyncio
 import structlog
 import websockets
@@ -179,4 +180,5 @@ async def main():
 
 
 if __name__ == '__main__':
+    uvloop.install()
     asyncio.run(main())
