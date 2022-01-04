@@ -12,7 +12,7 @@ from snake import SnakeGame, Direction
 
 logger = structlog.get_logger()
 
-FPS = 10
+FPS = 6
 
 SESSIONS = {
     'test': {
