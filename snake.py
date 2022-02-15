@@ -113,8 +113,11 @@ class Snake(Collision):
 
         return tail, next_head
 
-    def serialize(self) -> List[List[int]]:
-        return [[cell.x, cell.y] for cell in self.cells]
+    def serialize(self) -> Dict[str, Any]:
+        return {
+            'direction': str(self.direction),
+            'cells': [[cell.x, cell.y] for cell in self.cells]
+        }
 
 
 class SnakeGame:

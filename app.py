@@ -77,7 +77,6 @@ async def join(websocket: Any, session_id: str, user_id: int):
 
     try:
         async for message in websocket:
-            logger.warning(f'Got {message=}')
             event = json.loads(message)
             user_id = event['user_id']
 
