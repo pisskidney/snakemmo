@@ -12,14 +12,14 @@ from snake import SnakeGame, Direction
 
 logger = structlog.get_logger()
 
-FPS = 6
+FPS = 15
 
 SESSIONS = {
     'test': {
         'name': 'Test',
         'players': set([]),
         'observers': set([]),
-        'game': SnakeGame(75, 150),
+        'game': SnakeGame(50, 100),
         'ranked': False,
         'icon': 'https://i.imgur.com/9dB9PWd.png',
     },
@@ -27,7 +27,7 @@ SESSIONS = {
         'name': 'Pine Forest',
         'players': set([]),
         'observers': set([]),
-        'game': SnakeGame(75, 150),
+        'game': SnakeGame(50, 100),
         'ranked': True,
         'icon': 'https://i.imgur.com/tLyBQWN.png',
     },
@@ -35,7 +35,7 @@ SESSIONS = {
         'name': 'Arabian Desert',
         'players': set([]),
         'observers': set([]),
-        'game': SnakeGame(75, 150),
+        'game': SnakeGame(50, 100),
         'ranked': True,
         'icon': 'https://i.imgur.com/E2kJmpO.png',
     },
@@ -43,7 +43,7 @@ SESSIONS = {
         'name': 'Tropical Island',
         'players': set([]),
         'observers': set([]),
-        'game': SnakeGame(75, 150),
+        'game': SnakeGame(50, 100),
         'ranked': True,
         'icon': 'https://i.imgur.com/52OxYNa.png',
     },
