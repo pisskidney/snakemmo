@@ -21,7 +21,7 @@ def move_cell(cell: Cell, direction: Direction) -> Cell:
     return func(cell)
 
 
-class Collision(ABC):
+class Collider(ABC):
     ...
 
 
@@ -36,11 +36,7 @@ class SnakeGameException(BaseException):
     ...
 
 
-class PlayerDied(SnakeGameException):
-    ...
-
-
-class PlayerExited(SnakeGameException):
+class CollisionException(SnakeGameException):
     ...
 
 
@@ -48,7 +44,7 @@ class Apple():
     ...
 
 
-class Snake(Collision):
+class Snake(Collider):
     def __init__(
         self, user_id: int,
         initial_direction: Direction,
@@ -97,13 +93,25 @@ class Snake(Collision):
             marshall_distance(snake1.tail, snake2.head),
         )
 
-    def move(self) -> Tuple[Optional[Cell], Cell]:
+    def move(self, game: SnakeGame) -> Tuple[Optional[Cell], Cell]:
         """
         Move the snake cells according to the direction.
-        Return the evacuated cells and the newly created ones.
+        Return the evacuated cell and the newly created ones.
+
+        If a collision happens, CollisionException is raised.
         """
         next_head = move_cell(self.head, self.direction)
+
+        if (
+            not (0 <= next_head.x < game.rows) or
+            not (0 <= next_head.y < game.cols) or
+            issubclass(type(game.board[next_head.x][next_head.y]), Collider)
+        ):
+            raise CollisionException()
+
         self.cells.append(next_head)
+
+        # Only return tail if it is ejected from cell list (not an apple)
         tail = None
         if not self.is_tail_apple():
             tail = self.cells.popleft()
@@ -184,24 +192,22 @@ class SnakeGame:
                 if self.is_valid_input(candidate_direction, snake.direction):
                     snake.direction = candidate_direction
                     break
-            tail, head = snake.move()
-            if (
-                    not (0 <= head.x < self.rows) or
-                    not (0 <= head.y < self.cols) or
-                    issubclass(type(self.board[head.x][head.y]), Collision)
-            ):
-                dead.append(user_id)
-            else:
+            try:
+                tail, head = snake.move(self)
+
                 self.board[head.x][head.y] = snake
 
-            # If just eaten an apple
-            if snake.is_head_apple(self.apples):
-                snake.eaten_apples.append(snake.head)
-                self.apples.remove(snake.head)
+                # If just eaten an apple
+                if snake.is_head_apple(self.apples):
+                    snake.eaten_apples.append(snake.head)
+                    self.apples.remove(snake.head)
 
-            # If tail is not an apple
-            if tail:
-                self.board[tail.x][tail.y] = None
+                # If tail is not an apple
+                if tail:
+                    self.board[tail.x][tail.y] = None
+
+            except CollisionException:
+                dead.append(user_id)
 
         # Handle dead snakes
         for user_id in dead:
@@ -228,9 +234,9 @@ class SnakeGame:
         1. Add to death list
         2. Transform dead cells into apples
         """
-        # Iterate through snake body except head that collided
+        # Iterate through snake body
         self.dead_last_tick.append(user_id)
-        for cell in list(self.snakes[user_id].cells)[:-1]:
+        for cell in list(self.snakes[user_id].cells):
             self.create_apple(cell)
 
             # Remove any commands left in the queue
