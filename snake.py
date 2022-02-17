@@ -123,14 +123,14 @@ class Snake(Collider):
 
     def serialize(self) -> Dict[str, Any]:
         return {
-            'direction': str(self.direction),
+            'direction': str(self.direction.value),
             'cells': [[cell.x, cell.y] for cell in self.cells]
         }
 
 
 class SnakeGame:
     SNAKE_LENGTH_INITIAL = 10
-    MAX_APPLES_PER_PLAYER = 15
+    MAX_APPLES_PER_PLAYER = 50
 
     def __init__(self, rows: int, cols: int):
         """
@@ -160,7 +160,7 @@ class SnakeGame:
                 randint(self.SNAKE_LENGTH_INITIAL * 2, self.cols - (self.SNAKE_LENGTH_INITIAL * 2))
             )
             for _ in range(self.SNAKE_LENGTH_INITIAL):
-                if self.board[cell.x][cell.y] is not None:
+                if issubclass(type(self.board[cell.x][cell.y]), Collider):
                     break
                 snake_cells.append(cell)
                 cell = move_cell(cell, direction)
@@ -168,6 +168,11 @@ class SnakeGame:
         snake = Snake(user_id, direction, snake_cells)
         for cell in snake_cells:
             self.board[cell.x][cell.y] = snake
+
+            # Also delete apples that might be in the place of snakes
+            if cell in self.apples:
+                self.apples.remove(cell)
+
         self.snakes[user_id] = snake
         return snake
 
