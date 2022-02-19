@@ -150,6 +150,11 @@ async def handler(websocket):
         ...
 
 
+def shutdown_handler(future):
+    logger.error('SIGTERM received')
+    future.set_result(None)
+
+
 def game_loop():
     for session_id, session in SESSIONS.items():
         game = session['game']
@@ -165,7 +170,7 @@ def game_loop():
 async def main():
     loop = asyncio.get_running_loop()
     stop = loop.create_future()
-    loop.add_signal_handler(signal.SIGTERM, stop.set_result, None)
+    loop.add_signal_handler(signal.SIGTERM, shutdown_handler, stop)
     port = int(os.environ.get('PORT', 8001))
 
     logger.info('Server started...')
